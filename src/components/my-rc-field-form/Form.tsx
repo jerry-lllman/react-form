@@ -4,15 +4,21 @@ import useForm, { FormType } from "./useForm"
 
 interface FormProps {
 	form: FormType
-	onFinish: ()=> void
-	onFinishFailed: () => void
+	onFinish: (data: any) => void
+	onFinishFailed: (err: any[], data: any) => void
 	children: React.ReactNode
 }
 
 export default function Form(props: FormProps) {
-	const { form } = props
+	const { form, onFinish, onFinishFailed } = props
+
+	const onSubmit = (e: React.FormEvent) => {
+		e.preventDefault()
+		form.submit(onFinish, onFinishFailed)
+	}
+
 	return (
-		<form>
+		<form onSubmit={onSubmit}>
 			<FieldContext.Provider value={form}>
 				{props.children}
 			</FieldContext.Provider>

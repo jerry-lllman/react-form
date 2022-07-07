@@ -4,7 +4,7 @@ class FormStore{
 	private store: {
 		[name: string]: any
 	}
-	constructor(store = { name: "" }) {
+	constructor(store = { }) {
 		this.store = store
 	}
 
@@ -23,14 +23,35 @@ class FormStore{
 			...this.store,
 			...newStore
 		}
+		console.log(this.store)
+	}
+
+	validate = () => {
+		const err: any[] = []
+
+		return err
+	}
+
+	submit = (onFinish: any, onFinishFailed: any) => {
+		console.log('submit')
+		let err = this.validate()
+
+		if (err.length === 0) {
+			// 校验通过
+			onFinish(this.getFieldsValue())
+		} else {
+			// 校验失败
+			onFinishFailed(err, this.getFieldsValue())
+		}
 	}
 
 	getForm = () => {
-		const { getFieldValue, getFieldsValue, setFieldValue } = this
+		const { getFieldValue, getFieldsValue, setFieldValue, submit } = this
 		return {
 			getFieldValue,
 			getFieldsValue,
-			setFieldValue
+			setFieldValue,
+			submit
 		}
 	}
 }

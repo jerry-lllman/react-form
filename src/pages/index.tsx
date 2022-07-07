@@ -17,11 +17,11 @@ export default function RCFieldForm() {
 
 	console.log(form)
 
-	const onFinish = () => {
-		console.log('onFinish')
+	const onFinish = (data: any) => {
+		console.log('onFinish', data)
 	}
 
-	const onFinishFailed = ( ) => {
+	const onFinishFailed = () => {
 		console.log('onFinishFailed')
 	}
 
