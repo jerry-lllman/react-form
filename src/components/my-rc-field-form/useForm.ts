@@ -1,10 +1,13 @@
 import { useRef } from "react"
-import { FieldEntity, Store } from "./interface"
+import { HOOK_MARK } from "./FieldContext"
+import { Callbacks, FieldEntity, FormInstance, InternalFormInstance, InternalHooks, NamePath, Store, ValidateErrorEntity } from "./interface"
 
-class FormStore{
+class FormStore {
+	private formHooked: boolean = false
 	private store: Store = {}
 
 	private fieldEntities: any[] = []
+  private callbacks: Callbacks = {};
 
 	constructor() {
 	}
@@ -24,12 +27,12 @@ class FormStore{
 		return { ...this.store }
 	}
 
-	getFieldValue = (name: keyof Store) => {
+	getFieldValue = (name: NamePath) => {
 		return this.store[name]
 	}
 
 	// set
-	setFieldValue = (newStore: Partial<Store>) => {
+	setFieldsValue = (newStore: Partial<Store>) => {
 		this.store = {
 			...this.store,
 			...newStore
@@ -49,7 +52,7 @@ class FormStore{
 
 		this.fieldEntities.forEach(entity => {
 			const { name, rules } = entity.props
-			
+
 			const value = this.getFieldValue(name)
 			let rule = rules[0]
 
@@ -60,41 +63,81 @@ class FormStore{
 		return err
 	}
 
-	submit = (onFinish: any, onFinishFailed: any) => {
+	submit = () => {
 		console.log('submit')
 		let err = this.validate()
 
 		if (err.length === 0) {
 			// 校验通过
-			onFinish(this.getFieldsValue())
+			const { onFinish } = this.callbacks
+			if (onFinish) {
+				onFinish(this.getFieldsValue())
+			}
 		} else {
 			// 校验失败
-			onFinishFailed(err, this.getFieldsValue())
+			// onFinishFailed(err, this.getFieldsValue())
+			const { onFinishFailed } = this.callbacks
+			if (onFinishFailed) {
+				onFinishFailed(err as any)
+			}
 		}
 	}
 
-	getForm = () => {
-		const {registerField, getFieldValue, getFieldsValue, setFieldValue, submit } = this
+	getForm = (): InternalFormInstance => {
+		const { getFieldValue, getFieldsValue, setFieldsValue, submit } = this
 		return {
-			registerField,
 			getFieldValue,
 			getFieldsValue,
-			setFieldValue,
-			submit
+			setFieldsValue,
+			submit,
+
+			getInternalHooks: this.getInternalHooks
 		}
+	}
+
+  private setCallbacks = (callbacks: Callbacks) => {
+    this.callbacks = callbacks;
+  };
+
+	getInternalHooks = (key: string): InternalHooks | null => {
+		if (key === HOOK_MARK) {
+      this.formHooked = true;
+
+      return {
+        // dispatch: this.dispatch,
+        // initEntityValue: this.initEntityValue,
+        registerField: this.registerField,
+        // useSubscribe: this.useSubscribe,
+        // setInitialValues: this.setInitialValues,
+        // destroyForm: this.destroyForm,
+        setCallbacks: this.setCallbacks,
+        // setValidateMessages: this.setValidateMessages,
+        // getFields: this.getFields,
+        // setPreserve: this.setPreserve,
+        // getInitialValue: this.getInitialValue,
+        // registerWatch: this.registerWatch,
+      };
+    }
+
+    console.warn(false, '`getInternalHooks` is internal usage. Should not call directly.');
+    return null;
 	}
 }
 
-export type FormType = ReturnType<InstanceType<typeof FormStore>['getForm']> 
+// export type FormType = ReturnType<InstanceType<typeof FormStore>['getForm']>
 
-export default function useForm() {
+export default function useForm<Values = any>(form?: FormInstance<Values>) {
 
-	const formRef = useRef<FormType>()
+	const formRef = useRef<FormInstance<Values>>()
 
 	if (!formRef.current) {
-		const formStore = new FormStore()
-		// 使用 getForm 拿方法，避免 class 被修改
-		formRef.current = formStore.getForm()
+		if (form) {
+			formRef.current = form
+		} else {
+			const formStore = new FormStore()
+			// 使用 getForm 拿方法，避免 class 被修改
+			formRef.current = formStore.getForm()
+		}
 	}
 
 	return [formRef.current]

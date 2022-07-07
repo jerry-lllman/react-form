@@ -1,11 +1,12 @@
 import React, { Component, useEffect } from "react"
-import FieldContext from "./FieldContext"
+import FieldContext, { HOOK_MARK } from "./FieldContext"
 
 export default class Field extends React.Component {
 	static contextType = FieldContext
 
 	componentDidMount() {
-	 	this.unregister = this.context.registerField(this)
+		const { registerField } = this.context.getInternalHooks(HOOK_MARK)
+		this.unregister = registerField(this)
 	}
 
 	componentWillUnmount() {
@@ -22,7 +23,7 @@ export default class Field extends React.Component {
 			value: this.context?.getFieldValue(this.props.name),
 			onChange: (e) => {
 				const value = e.target.value
-				this.context?.setFieldValue({
+				this.context?.setFieldsValue({
 					[this.props.name]: value
 				})
 			}
