@@ -46,6 +46,7 @@ export default class RCFieldForm extends React.Component {
 
 	componentDidMount() {
 		console.log(this.formRef.current)
+		this.formRef.current.setFieldsValue({ username: "jerry" })
 	}
 	onFinish = (data) => {
 		console.log('onFinish', data)

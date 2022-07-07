@@ -25,15 +25,18 @@ export interface FormProps<Values = any> extends BaseFormProps {
 }
 
 
-const  Form: React.ForwardRefRenderFunction<FormInstance, FormProps> =(props: FormProps, ref) => {
+const Form: React.ForwardRefRenderFunction<FormInstance, FormProps> = (props: FormProps, ref) => {
 	const { children, form, onFinish, onFinishFailed } = props
 
 	// 函数组件存在传过来的 form 
 	// class 没有，适配一下，这里 使用 useForm
 	const [formInstance] = useForm(form)
+
+	React.useImperativeHandle(ref, () => formInstance)
+
 	const {
 		setCallbacks,
-		
+
 	} = (formInstance as InternalFormInstance).getInternalHooks(HOOK_MARK) as InternalHooks
 
 	setCallbacks({
