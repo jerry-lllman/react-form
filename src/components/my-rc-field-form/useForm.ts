@@ -1,11 +1,22 @@
 import { useRef } from "react"
+import { FieldEntity, Store } from "./interface"
 
 class FormStore{
-	private store: {
-		[name: string]: any
+	private store: Store = {}
+
+	private fieldEntities: any[] = []
+
+	constructor() {
 	}
-	constructor(store = { }) {
-		this.store = store
+
+	// 注册与卸载
+	private registerField = (entity: any) => {
+		this.fieldEntities.push(entity)
+
+		return () => {
+			this.fieldEntities = this.fieldEntities.filter(item => item !== entity)
+			delete this.store[entity.props.name]
+		}
 	}
 
 	// get
@@ -13,22 +24,39 @@ class FormStore{
 		return { ...this.store }
 	}
 
-	getFieldValue = (name: keyof typeof this.store) => {
+	getFieldValue = (name: keyof Store) => {
 		return this.store[name]
 	}
 
 	// set
-	setFieldValue = (newStore: Partial<typeof this.store>) => {
+	setFieldValue = (newStore: Partial<Store>) => {
 		this.store = {
 			...this.store,
 			...newStore
 		}
 		console.log(this.store)
+		this.fieldEntities.forEach(entity => {
+			Object.keys(newStore).forEach(k => {
+				if (k === entity.props.name) {
+					entity.onStoreChange()
+				}
+			})
+		})
 	}
 
 	validate = () => {
 		const err: any[] = []
 
+		this.fieldEntities.forEach(entity => {
+			const { name, rules } = entity.props
+			
+			const value = this.getFieldValue(name)
+			let rule = rules[0]
+
+			if (rule && rule.required && (value === undefined || value === '')) {
+				err.push({ [name]: rule.message, value })
+			}
+		})
 		return err
 	}
 
@@ -46,8 +74,9 @@ class FormStore{
 	}
 
 	getForm = () => {
-		const { getFieldValue, getFieldsValue, setFieldValue, submit } = this
+		const {registerField, getFieldValue, getFieldsValue, setFieldValue, submit } = this
 		return {
+			registerField,
 			getFieldValue,
 			getFieldsValue,
 			setFieldValue,
